@@ -460,3 +460,346 @@ func Test_CrossEntropy(t *testing.T) {
 		}
 	}
 }
+
+func Test_Mean(t *testing.T) {
+	tests := []struct {
+		m, ans Mat
+	}{
+		{
+			m: Mat{
+				{3, 7, .5},
+				{9, 11, 2.52},
+			},
+			ans: Mat{
+				{3.5},
+				{7.506666666666667},
+			},
+		},
+		{
+			m: Mat{
+				{0, 0, 0},
+				{9, 0, 0},
+			},
+			ans: Mat{
+				{0},
+				{3},
+			},
+		},
+		{
+			m: Mat{
+				{-1, -1, -1},
+				{-1, -1, -1},
+				{-10, -10, -10},
+			},
+			ans: Mat{
+				{-1},
+				{-1},
+				{-10},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		mean := test.m.Mean()
+		if !reflect.DeepEqual(mean, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, mean, test.ans)
+		}
+	}
+}
+
+func Test_Var(t *testing.T) {
+	tests := []struct {
+		m, mean, ans Mat
+	}{
+		{
+			m: Mat{
+				{1., 2., 3., 4.},
+				{5., 6., 7., 8.},
+			},
+			mean: Mat{
+				{2.5},
+				{6.5},
+			},
+			ans: Mat{
+				{1.25},
+				{1.25},
+			},
+		},
+		{
+			m: Mat{
+				{82, 101, 54.9},
+				{99, 12, 35.1},
+			},
+			mean: Mat{
+				{79.3},
+				{48.699999999999996},
+			},
+			ans: Mat{
+				{357.84666666666664},
+				{1353.9800000000002},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		variance := test.m.Var(test.mean)
+		if !reflect.DeepEqual(variance, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, variance, test.ans)
+		}
+	}
+}
+
+func Test_RowSum(t *testing.T) {
+	tests := []struct {
+		m, ans Mat
+	}{
+		{
+			m: Mat{
+				{10, 5, -1},
+			},
+			ans: Mat{
+				{14},
+			},
+		},
+		{
+			m: Mat{
+				{10},
+			},
+			ans: Mat{
+				{10},
+			},
+		},
+		{
+			m: Mat{
+				{3, .5, 2},
+				{-1, -1, .5},
+				{5, 5, -5},
+			},
+			ans: Mat{
+				{5.5},
+				{-1.5},
+				{5},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		sum := test.m.RowSum()
+		if !reflect.DeepEqual(sum, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, sum, test.ans)
+		}
+	}
+}
+
+func Test_Sub1(t *testing.T) {
+	tests := []struct {
+		m, b, ans Mat
+	}{
+		{
+			m: Mat{
+				{3, 2.5, .1},
+				{0, 2, -1},
+			},
+			b: Mat{
+				{3},
+				{-1},
+			},
+			ans: Mat{
+				{0, -.5, -2.9},
+				{1, 3, 0},
+			},
+		},
+		{
+			m: Mat{
+				{3},
+				{0},
+			},
+			b: Mat{
+				{3},
+				{-1},
+			},
+			ans: Mat{
+				{0},
+				{1},
+			},
+		},
+		{
+			m: Mat{
+				{3, .5, 2},
+			},
+			b: Mat{
+				{.5},
+			},
+			ans: Mat{
+				{2.5, 0, 1.5},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		sub := test.m.Sub1(test.b)
+		if !reflect.DeepEqual(sub, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, sub, test.ans)
+		}
+	}
+}
+
+func Test_Concat(t *testing.T) {
+	tests := []struct {
+		ms  []Mat
+		ans Mat
+	}{
+		{
+			ms: []Mat{
+				{
+					{3, .5},
+					{1, -.7},
+				},
+				{
+					{-2, -3},
+					{2, .1},
+				},
+				{
+					{-1, 0},
+					{-.1, 0},
+				},
+				{
+					{-.5},
+					{.1},
+				},
+			},
+			ans: Mat{
+				{3, .5, -2, -3, -1, 0, -.5},
+				{1, -.7, 2, .1, -.1, 0, .1},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		conc := Concat(test.ms...)
+		if !reflect.DeepEqual(conc, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, conc, test.ans)
+		}
+	}
+}
+
+func Test_Split(t *testing.T) {
+	tests := []struct {
+		m   Mat
+		n   int
+		ans []Mat
+	}{
+		{
+			m: Mat{
+				{3, .5, -2, -3, -1, 0, -.5, .2},
+				{1, -.7, 2, .1, -.1, 0, .1, .3},
+			},
+			n: 4,
+			ans: []Mat{
+				{
+					{3, .5},
+					{1, -.7},
+				},
+				{
+					{-2, -3},
+					{2, .1},
+				},
+				{
+					{-1, 0},
+					{-.1, 0},
+				},
+				{
+					{-.5, .2},
+					{.1, .3},
+				},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		split := Split(test.m, test.n)
+		if !reflect.DeepEqual(split, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, split, test.ans)
+		}
+	}
+}
+
+func Test_MaxIndex(t *testing.T) {
+	tests := []struct {
+		m              Mat
+		maxRow, maxCol int
+	}{
+		{
+			m: Mat{
+				{10, 30, -20},
+				{90, 60, 90},
+				{70, 30, 110},
+			},
+			maxRow: 2,
+			maxCol: 2,
+		},
+		{
+			m: Mat{
+				{10, 30, -20},
+			},
+			maxRow: 0,
+			maxCol: 1,
+		},
+		{
+			m: Mat{
+				{10},
+				{400},
+				{600},
+			},
+			maxRow: 2,
+			maxCol: 0,
+		},
+		{
+			m:      Mat{{}},
+			maxRow: 0,
+			maxCol: 0,
+		},
+		{
+			m: Mat{
+				{10},
+				{10},
+				{10},
+			},
+			maxRow: 0,
+			maxCol: 0,
+		},
+	}
+
+	for i, test := range tests {
+		maxRow, maxCol := test.m.MaxIndex()
+		if maxRow != test.maxRow || maxCol != test.maxCol {
+			t.Errorf("%d: %v != %v", i+1, maxRow, maxCol)
+		}
+	}
+}
+
+func Test_OneHot(t *testing.T) {
+	tests := []struct {
+		m      Mat
+		labels []int
+		ans    Mat
+	}{
+		{
+			m:      New(4, 10),
+			labels: []int{9, 8, 1, 3},
+			ans: Mat{
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+				{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+				{0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		test.m.OneHot(test.labels)
+		if !reflect.DeepEqual(test.m, test.ans) {
+			t.Errorf("%d: %v != %v", i+1, test.m, test.ans)
+		}
+	}
+}

@@ -7,6 +7,10 @@ import (
 	"ml/pkg/mat"
 )
 
+func Upd(x, dx mat.Mat, lrate float64) mat.Mat {
+	return x.Sub(dx.Scale(lrate))
+}
+
 func Shuffle[T any](sl []T) {
 	for range len(sl) {
 		a, b := rand.Intn(len(sl)), rand.Intn(len(sl))

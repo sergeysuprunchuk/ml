@@ -2,6 +2,7 @@ package mlp
 
 import (
 	"ml/pkg/mat"
+	"ml/pkg/mlutil"
 )
 
 type Layer struct {
@@ -21,6 +22,17 @@ func (l *Layer) Backward(dans mat.Mat) (dx, dweight, dbias mat.Mat) {
 	return dans.Mul(l.Weight.T()),
 		l.x.T().Mul(dans),
 		dans
+}
+
+func (l *Layer) BackwardMut(dans mat.Mat, lrate float64) mat.Mat {
+	dx := dans.Mul(l.Weight.T())
+	dweight := l.x.T().Mul(dans)
+	dbias := dans
+
+	l.Weight = mlutil.Upd(l.Weight, dweight, lrate)
+	l.Bias = mlutil.Upd(l.Bias, dbias, lrate)
+
+	return dx
 }
 
 func (l *Layer) Update(dweight, dbias mat.Mat, lrate float64) {
@@ -78,6 +90,20 @@ func (mlp *MLP) Backward(dans mat.Mat) []DLayer {
 	}
 
 	return dlays
+}
+
+func (mlp *MLP) BackwardMut(dans mat.Mat, lrate float64) mat.Mat {
+	for i := len(mlp.Lays) - 1; i >= 0; i-- {
+		dans = mlp.Lays[i].BackwardMut(dans, lrate)
+
+		if i != 0 {
+			dans = mlp.Lays[i-1].ans.
+				LeakyReLUDer(mlp.Alpha).
+				MulElwise(dans)
+		}
+	}
+
+	return dans
 }
 
 func (mlp *MLP) Update(dlays []DLayer, lrate float64) {

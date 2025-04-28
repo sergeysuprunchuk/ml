@@ -188,6 +188,142 @@ func (m Mat) Rand() Mat {
 	return m
 }
 
+// Mean вычисляет среднее значение для каждой строки матрицы
+func (m Mat) Mean() Mat {
+	coln := float64(m.ColN())
+
+	mean := New(m.RowN(), 1)
+	for row := range m {
+		for col := range m[row] {
+			mean[row][0] += m[row][col]
+		}
+		mean[row][0] /= coln
+	}
+
+	return mean
+}
+
+// Var вычисляет дисперсию для каждой строки
+func (m Mat) Var(mean Mat) Mat {
+	coln := float64(m.ColN())
+
+	variance := New(m.RowN(), 1)
+	for row := range m {
+		for col := range m[row] {
+			variance[row][0] += math.Pow(m[row][col]-mean[row][0], 2)
+		}
+		variance[row][0] /= coln
+	}
+
+	return variance
+}
+
+func (m Mat) ColSum() Mat {
+	mat := New(1, m.ColN())
+	for row := range m {
+		for col := range m[row] {
+			mat[0][col] += m[row][col]
+		}
+	}
+	return mat
+}
+
+func (m Mat) RowSum() Mat {
+	mat := New(m.RowN(), 1)
+	for row := range m {
+		for col := range m[row] {
+			mat[row][0] += m[row][col]
+		}
+	}
+	return mat
+}
+
+func (m Mat) Sub1(b Mat) Mat {
+	mat := New(m.RowN(), m.ColN())
+
+	for row := range m {
+		for col := range m[row] {
+			mat[row][col] = m[row][col] - b[row][0]
+		}
+	}
+
+	return mat
+}
+
+func Concat(matrices ...Mat) Mat {
+	if len(matrices) == 0 {
+		panic("concat: empty matrices")
+	}
+
+	//предполагается, что количество строк в каждой матрице одинаково
+	mat := New(matrices[0].RowN(), 0)
+	for _, m := range matrices {
+		for row := range m {
+			mat[row] = append(mat[row], m[row]...)
+		}
+	}
+
+	return mat
+}
+
+func Split(mat Mat, n int) []Mat {
+	if mat.RowN() == 0 {
+		panic("невозможно разделить матрицу на n равных частей")
+	}
+
+	coln := int(math.Ceil(float64(mat.ColN()) / float64(n)))
+
+	mats := make([]Mat, 0, n)
+	for range n {
+		mats = append(mats, New(mat.RowN(), coln))
+	}
+
+	for row := range mat {
+		var i int
+		for chunk := range slices.Chunk(mat[row], coln) {
+			mats[i][row] = chunk
+			i++
+		}
+	}
+
+	return mats
+}
+
+func (m Mat) MaxIndex() (int, int) {
+	if m.RowN() == 0 || m.ColN() == 0 {
+		return 0, 0
+	}
+
+	var maxRow, maxCol int
+	maxVal := m[maxRow][maxCol]
+
+	for row := range m {
+		for col := range m[row] {
+			if maxVal < m[row][col] {
+				maxRow, maxCol = row, col
+				maxVal = m[row][col]
+			}
+		}
+	}
+
+	return maxRow, maxCol
+}
+
+func (m Mat) OneHot(labels []int) {
+	if m.RowN() != len(labels) {
+		panic("m.RowN() != len(labels)")
+	}
+
+	for row := range m {
+		for col := range m[row] {
+			if col == labels[row] {
+				m[row][col] = 1
+				break
+			}
+		}
+	}
+}
+
 func New(rown, coln int) Mat {
 	mat := make([][]float64, 0, rown)
 

@@ -32,7 +32,6 @@ func (num *Num) Learn(src string, epochs, pkgSize int, lrate float64) {
 
 		for pkg := range slices.Chunk(data, pkgSize) {
 			var err float64
-			dlays := make([]mlp.DLayer, 0, len(num.MLP.Lays))
 
 			for _, ex := range pkg {
 				probs := num.MLP.Forward(ex.inp).Softmax()
@@ -42,27 +41,11 @@ func (num *Num) Learn(src string, epochs, pkgSize int, lrate float64) {
 
 				err += probs.CrossEntropy(truth)
 
-				for i, newDlayer := range num.MLP.Backward(probs.Sub(truth)) {
-					if i >= len(dlays) {
-						dlays = append(dlays, newDlayer)
-						continue
-					}
-
-					dlays[i].Weight = dlays[i].Weight.Add(newDlayer.Weight)
-
-					dlays[i].Bias = dlays[i].Bias.Add(newDlayer.Bias)
-				}
+				num.MLP.BackwardMut(probs.Sub(truth), lrate)
 			}
 
 			zap.S().Infof("эпоха %d, пакет %d: ошибка %.4f",
 				epoch+1, pkgi+1, err/float64(pkgSize))
-
-			for i := range dlays {
-				dlays[i].Weight = dlays[i].Weight.Scale(1.0 / float64(pkgSize))
-				dlays[i].Bias = dlays[i].Bias.Scale(1.0 / float64(pkgSize))
-			}
-
-			num.MLP.Update(dlays, lrate)
 
 			pkgi++
 		}
